@@ -84,8 +84,15 @@ write.csv(df,'design_eff.csv')
 
 #inefficient
 
-df=data.frame(expand.grid(x=seq(150,850,by=75),y=seq(200,950,by=80)))
-df
-write.csv(df,'design_ineff.csv')
+# df=data.frame(expand.grid(x=seq(150,850,by=75),y=seq(200,950,by=80)))
+# df
+# write.csv(df,'design_ineff.csv')
+set.seed(123)
+n <- 100
+x <- runif (n, min = 10, max = 990)
+y <- runif (n, min = 600, max = 950)
 
+df=data.frame(x = x, y = y)
+df
+write.csv(df,'design_ineff2.csv')
 

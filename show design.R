@@ -1,4 +1,4 @@
-design=read.csv('design_eff.csv')
+design=read.csv('design_ineff2.csv')
 
 load('ntrees')
 tinds = which(ntrees>0,arr.ind=TRUE)
