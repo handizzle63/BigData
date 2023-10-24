@@ -53,15 +53,34 @@ df=data.frame(x = x, y = y)
 df
 write.csv(df,'design_rand3.csv')
 
-#efficient?
-set.seed(111)
-n <- 100
-x <- runif (n, min = 100, max = 900)
-y <- runif (n, min = 200, max = 700)
+#efficient - minimum distance = lure strength
 
-df=data.frame(x = x, y = y)
+set.seed(321)
+
+n <- 100
+dist <- 20
+range_x <- c(10, 990)  
+range_y <- c(10, 990)  
+
+gen <- function(n, dist, range_x, range_y) {
+  coordinates <- data.frame(x = numeric(0), y = numeric(0))
+  
+  while(nrow(coordinates) < n) {
+    x <- runif(1, range_x[1], range_x[2])
+    y <- runif(1, range_y[1], range_y[2])
+    
+    if (nrow(coordinates) == 0 || all(sqrt((coordinates$x - x)^2 + (coordinates$y - y)^2) >= dist)) {
+      coordinates <- rbind(coordinates, data.frame(x = x, y = y))
+    }
+  }
+  
+  return(coordinates)
+}
+
+df <- gen(n, dist, range_x, range_y)
 df
 write.csv(df,'design_eff.csv')
+
 
 #inefficient
 

@@ -2,7 +2,7 @@ nruns=5000
 
 #### model parameters
 male.max.age = 36
-luredist = 20		# metres
+luredist = 50		# metres
 mmdd = 300  ## mean male daily distance
 
 ### notes on distance units... 
@@ -11,8 +11,8 @@ mmdd = 300  ## mean male daily distance
 ## simulation is run on pixels, so units in metres are divided by 10 in the code
 
 #################  surveillance design... 
-designname = 'design_redgrid'
-design=read.csv('design_rd25.csv')
+designname = 'grid_l50'
+design=read.csv('design_grid.csv')
 
 
 load('ntrees')
