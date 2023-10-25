@@ -1,4 +1,4 @@
-,time,trap.id,nmales,ntrees,type,lure
+sim,time,trap.id,nmales,ntrees,type,lure
 1,46,20,4,2,ineff2,50
 2,54,68,15,7,ineff2,50
 3,99,13,359,30,ineff2,50

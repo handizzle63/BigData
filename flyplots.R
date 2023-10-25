@@ -145,6 +145,7 @@ lure5 <- ggplot(flies5, aes(x = time))+
 
 lure5
 
+
 lure50 <- ggplot(flies50, aes(x = time))+
   geom_histogram(binwidth = 10)+
   theme_minimal()+
@@ -220,6 +221,9 @@ trees50
 
 ##### Plot arrangements
 # by lure strength
+plot_grid(lure5, lure20, lure50, ncol = 1, labels = c('A', 'B', 'C'))
+
+
 
 plot_grid(trees5, trees20, trees50, ncol = 1, labels = c('A', 'B', 'C'))
 
@@ -227,5 +231,5 @@ plot_grid(trees5, trees20, trees50, ncol = 1, labels = c('A', 'B', 'C'))
 ggsave("treesworstcase.png")
 
 
-
+145-77
           

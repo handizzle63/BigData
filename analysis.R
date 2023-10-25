@@ -92,11 +92,11 @@ dat <- readRDS('flies1.RDS')%>%
   glimpse()
 
 #KS between grid and each other surveillance type
+
 df <- dat %>%
-  dplyr::filter(type %in% c("grid", "ineff2"))%>%
+  dplyr::filter(type %in% c("grid", "redgrid"))%>%
   glimpse()
 
-unique(df$type)
 
 ks.test(df$ntrees~df$type)
 
@@ -306,3 +306,4 @@ pairwise.wilcox.test(allflies$ntrees, allflies$lure, p.adjust.method = 'BH')
 kruskal.test(time ~ lure, data = allflies) 
 pairwise.wilcox.test(allflies$time, allflies$lure, p.adjust.method = 'BH')
 
+citation('car')
