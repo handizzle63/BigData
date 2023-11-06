@@ -85,7 +85,7 @@ paste('button',1,'.txt',sep='')
 
 allbuttondata <- list()    ## create an empty list to hold all the data
 for (but in 1:22){
-	filename <- paste('button',but,'.txt',sep='')
+	filename <- paste('data/button',but,'.txt',sep='')
 	print(filename)
 	tempdata <- read.table(filename,header=TRUE)
 	splitlist <- strsplit(as.character(tempdata$time),':')
@@ -141,7 +141,7 @@ abline(v=470,lty=2) #adding vertical line
 
 ## or the minimum temperature on each day for button 1
 tapply(allbuttondata[[1]]$temp, allbuttondata[[1]]$day, min)
-
+tapply(allbuttondata[[2]]$temp, allbuttondata[[2]]$day, min)
 ## or the proportion of time on each day that the temperature was below 20 degrees for button 1
 abline(h=20,lty=3) #horizontal line from temp = 20
 nunder20 <- tapply( allbuttondata[[1]]$temp<20, allbuttondata[[1]]$day, sum) 
@@ -162,8 +162,15 @@ for(b in 1:22){
   fdf <- rbind(fdf,ndf)       # adding results to list
 }
 fdf
+fdf$but[2]
+
+but3 <- fdf %>%
+  dplyr::filter(but == 3)%>%
+  glimpse()
+  
 
 ## 2. determine which button had the highest proportion of time above 25 degrees
+
 allbuttondatadf=list()
 for (but in 1:22){
   tempdf = allbuttondata[[but]]
@@ -171,14 +178,14 @@ for (but in 1:22){
   allbuttondatadf = rbind(allbuttondatadf,tempdf)
 }
 
-Then, 
+#Then, 
 
-nover25 <- tapply( allbuttondatadf$temp>25, allbuttondatadf$but, sum) 
+x <- tapply( allbuttondatadf$temp >=19 & allbuttondatadf$temp <= 22, allbuttondatadf$but, sum) 
 ntotal <- tapply( allbuttondatadf$temp, allbuttondatadf$but, length)
-perc_over25 <- nover25/ntotal
+z <- x/ntotal
+z
 
-
-perc_over25[which(perc_over25==max(perc_over25))]
+z[which(z==max(z))]
 
 
 ## 3. determine which button reached its daily maximum earliest on each day
@@ -310,7 +317,9 @@ for (but in 1:22){
   
 }
 
-#Next we want to add another column to this data set, which is a sum of the number of buttons active at each time point (I called it 'activebuttons'):
+#Next we want to add another column to this data set, 
+#which is a sum of the number of buttons active at each time point
+#(I called it 'activebuttons'):
   
   button_count <- numeric()
 
@@ -336,22 +345,72 @@ allbuttondatadf$activebuttons <- sapply(allbuttondatadf$time, function(time) {
   
 })
 
-#Next we create a new data frame and write a loop with an 'if' statement to give us the button with the lowest temperature when the number of active buttons is at least 10:
-  
-  coldestbuttondf <- data.frame(time = numeric(0), coldestbutton = numeric(0))
+###
+#how many different times were at least 8 buttons recording?
 
-activebuttons10 <- unique(allbuttondatadf$time[allbuttondatadf$activebuttons >= 10])
+library(dplyr)
+
+a <- allbuttondatadf %>%
+       dplyr::filter(activebuttons >= 8)   
+
+
+#Next we create a new data frame and write a loop with an 'if' statement 
+# to give us the button with the 
+#lowest temperature when the number of active buttons is at least 10:
+  
+  coldestbuttondf <- data.frame(time = numeric(), coldestbutton = numeric())
+
+activebuttons10 <- unique(allbuttondatadf$time[allbuttondatadf$activebuttons >= 8])
 
 for (time_point in activebuttons10) {  
   
   subset_data <- allbuttondatadf[allbuttondatadf$time == time_point & allbuttondatadf$activebuttons >= 10, ]  
   
-  mintempbutton <- subset_data$but[which.min(subset_data$temp)]     
+  e <- tapply(allbuttondatadf[[but]]$temp, allbuttondatadf[[but]]$day, min)
   
-  coldestbuttondf <- rbind(coldestbuttondf, data.frame(time = time_point, coldest_button = mintempbutton))
+  #mintempbutton <- tapply()
+  coldestbuttondf <- rbind(coldestbuttondf, data.frame(time = time_point, coldest_button = e))
   
 }
 
 print(coldestbuttondf)
+
+##
+button3 <- list()    ## create an empty list to hold all the data
+
+for (but in 1:22){
+  tempdata <- read.table(filename,header=TRUE)
+  splitlist <- strsplit(as.character(tempdata$time),':')
+  day <- as.numeric(sapply(1:length(splitlist) , function(i) splitlist[[i]][1]) )
+  hr <- as.numeric(sapply(1:length(splitlist) , function(i) splitlist[[i]][2]) )
+  min <- as.numeric(sapply(1:length(splitlist) , function(i) splitlist[[i]][3]) )
+  totmin <- ((day*24)+hr)*60+min
+  tempdata$day <- day
+  tempdata$hr <- hr
+  tempdata$min <- min
+  tempdata$totmin <- totmin
+  print(head(tempdata))
+  button3[[but]] <- tempdata 	## this adds the finished data frame to the list
+}
+a <- data.frame(button3)
+
+a <- tempdata %>%
+  dplyr::filter(day == 3)%>%
+  glimpse()
+
+nunder20 <- colSums(a < 22)
+
+75/144
+
+a <- allbuttondatadf%>%
+  dplyr::filter(day == 4)
+which.max(a$temp)
+
+#how many different times were at least 8 buttons recording and two min temps = temp
+
+library(dplyr)
+
+a <- allbuttondatadf %>%
+  dplyr::filter(activebuttons >= 8)   
 
 

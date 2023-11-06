@@ -1,7 +1,7 @@
 ####################################################################
 ####################################################################
 ## community abundance data
-
+rm(list=ls())
 ## open the "BCI1.csv" file in excel and have a look
 ## the data is tree counts in 1-hectare plots in the Barro Colorado Island.
 ## there are 50 plots (rows) of 1 hectare with counts of trees on each plot with total of 225 species (columns). 
@@ -14,27 +14,57 @@
 ## Reference: Condit, R, Pitman, N, Leigh, E.G., Chave, J., Terborgh, J., Foster, R.B., Nu?ez, P., Aguilar, S., Valencia, R., Villa, G., Muller-Landau, H.C., Losos, E. & Hubbell, S.P. (2002). Beta-diversity in tropical forest trees. Science 295, 666?669. 
 
 ## first we read in the data set and have a quick look
-BCI <- read.csv("BCI1.csv")
+
+## columns are species names
+## frequencies are tree counts
+## each row is a plot, frequencies must be how many of that species in that plot
+
+BCI <- read.csv("data/BCI1.csv")
 head(BCI)
 names(BCI)
 
 ## use 'apply' to calculate the total number of individuals in each plot
-n <- rowSums(BCI)
-apply(BCI, 1, sum)
+#rowSums(BCI) 
+
+apply(BCI, 1, sum) #same as rowSums(BCI)
+apply(BCI,2, sum) # colSums(BCI)
+
+colSums(BCI)
 
 ## these are the co-ordinates of each plot
-UTM.EW <- rep(seq(625754, 626654, by=100), each=5)
-UTM.NS <- rep(seq(1011569,  1011969, by=100), len=50)
+UTM.EW <- rep(seq(625754, 626654, by=100), each=5) #lat 
+UTM.EW    #makes seq of number from 625754 that go up 100 after every 5 repeats
+UTM.NS <- rep(seq(1011569,  1011969, by=100), len=50) #lon
+UTM.NS    #makes seq of no. that go up 100 each time for a seq of 50
 
-## we can plot to look for spatial trends in total abundance
 
-## this is definitely easier using qplot from the ggplot library than the base plot function - if you have it installed...
+## VISUALISING spatial trends in total abundance
 
 library(ggplot2)
 qplot(UTM.EW, UTM.NS, size = nsp) #deprecated in ggplot 3.4.2 or something
+ggplot()+
+  geom_point(aes(UTM.EW, UTM.NS, size = nsp))
 
 
 ## Base R Plot
+n <- rowSums(BCI) #total abundance = no. of trees
+which(n==max(n)) #which site
+n[which(n == max(n))] #no. species 
+
+BCI = cbind(plot = plot, BCI) 
+library(dplyr)
+a <- BCI %>%
+  dplyr::filter(plot == 35)
+
+b <- colSums(a)
+b
+b[which(b == max(b))]
+
+c <- a %>%
+  dplyr::select(-c(Gustavia.superba, Alseis.blackiana))
+b <- colSums(c)
+b[which(b == max(b))]
+
 ptsz <- (n-min(n))/(max(n)-min(n))*5+0.5 #creating a vector within points relative to size of number of species present in each quadrat
 plot(UTM.EW,UTM.NS,cex=ptsz) 
 
@@ -42,19 +72,20 @@ plot(UTM.EW,UTM.NS,cex=ptsz)
 
 ## Calculate mean in each plot
 # with apply()
-apply(BCI,1,function(x) mean(x[x>0]) )
+apply(BCI,1,function(x) mean(x[x>0])) #excludes all the zeros and calcs. the mean
 
 ## now use 'rowSums' and 'rowMeans' to do the same things
-rowMeans(BCI)
-rowSums(BCI)/rowSums(BCI>0) #does the same as the above apply()
-mean(rowSums(BCI)) #overall mean from all plots and species
+rowMeans(BCI) #considers all the 0s - which we dont want e.g. 27/12 (trees/possible species) is diff to 27/2 (trees/actual species)
+rowSums(BCI)/rowSums(BCI>0) #does the same as the above apply() - GOOD!
+mean(rowSums(BCI)) #overall mean from all plots
+rowMeans(BCI)/rowMeans(BCI>0) #GOOD (excludes zeros)
 
 
 ### Calculating species richness per plot
 ## 1. Convert to presence/absence
 
 BCIPA <- (BCI>0)
-
+BCIPA
 ## 2. Sum p/a to get richness
 nsp <- apply(BCIPA,1,sum)
 
@@ -63,9 +94,12 @@ nspz <- (nsp-min(nsp))/(max(nsp)-min(nsp))*5+0.5
 plot(UTM.EW,UTM.NS,cex=nspz) 
 
 ### Shannon Diversity Index per Site
-## now we want to calculate the Shannon's diversity index for each site (see http://en.wikipedia.org/wiki/Diversity_index#Shannon_index)
-## the function to calculate Shannon's diversity is available in the vegan package (and others), but we will show how to write it here
+## now we want to calculate the Shannon's diversity index for each site
+## (see http://en.wikipedia.org/wiki/Diversity_index#Shannon_index)
+## the function to calculate Shannon's diversity is available in the vegan package
+library(vegan)
 
+#long way to calculate it
 shannon <- function(x) { #creating a function(x) called shannon
 	x <- subset(x,x>0)    
 	ps <- x/sum(x)
@@ -74,28 +108,39 @@ shannon <- function(x) { #creating a function(x) called shannon
 
 ## Use the apply() to calculate shannon diversity index
 xx=apply(BCI,1,shannon) #Note: applying it to the original dataset
+xx
+
+#check to see if same as vegan package - yes it is
+shan <- diversity(BCI, index = 'shannon')
+shan
 
 ## plot to look for spatial trends in shannon diversity
 xxz <- (xx^2)/2 #used variety of maths to try to show trend better but none great
 
 plot(UTM.EW, UTM.NS, cex = xx)
 
+
 ## Challenge: calculate Simpson Diversity index
 library(vegan)
 simp <- diversity(BCI, index = "simpson")
+simp
 ## returns values 0-1. Closer it is to one the lower the diversity
 
 ## use apply and/or colSums to calculate the total number of plots at which each species is found
 plotsum <- colSums(BCIPA) #using pres/abs df
 
-## use apply and/or colSums to calculate the frequency for each species (ie the proportion of plots at which it is found) 
+## use apply and/or colSums to calculate the frequency for each species 
+## (ie the proportion of plots at which it is found) 
+length(BCI$Abarema.macradenium)
 freq <- plotsum/50
+freq
 
-## of course from here you would likely go on to produce some ordinations or dendograms and do some multi-variate analysis - permanova
+## of course from here you would likely go on to produce some ordinations
+## or dendograms and do some multi-variate analysis - permanova
 
 
 ### now what if you wanted to analyse by genus instead of species??
-## look carefully at what each of the following lines of code does and see if you can follow - ask if in doubt  
+
 names(BCI)[1] #name of first species
 strsplit(names(BCI)[1],".",fixed=TRUE) #splitting genus and species at location 1
 strsplit(names(BCI),".",fixed=TRUE) #splits at . for entire df
@@ -128,29 +173,72 @@ tapply(class.data$n.ind,class.data$genus,sum)
 
 ##1. transpose the data, so species are by rows and plots by columns
 (BCIt <- data.frame(t(BCI)))
-## notice how the plots are automatically given a default name because a dataframe needs column names
 
-## now use the aggregate function on the transposed data frame to calculate the number of individuals within a genus at each plot
+## notice how the plots are automatically given a default name
+## because a dataframe needs column names
+
+## now use the aggregate function on the transposed data frame
+## to calculate the number of individuals within a genus at each plot
 BCIg <- aggregate(BCIt,by=list(gen),sum)
+BCIg
+
+x <- BCIg %>%
+  #select(-c(Group.1))%>%
+  filter(Group.1 != "Trichilia")
+x <- x %>%
+  select(-c(Group.1))
+
+b <- rowSums(x)
+b[which(b == max(b))]
+which(b==max(b))
+
+print(BCIg$Group.1[139])
+print(BCIg$Group.1[52])
 
 ## as a challenge you could try to calculate the genus richness of each plot, 
-grich <- apply(BCIg[, 2:51], 1, function(x) sum(x>0))
+grich <- apply(BCIg[,2:51], 2, function(x) sum(x>0)) #for colums make sure ], 2, ...
+grich
+
+#checking correct:
+# x <- BCIg %>%
+#   select(-c(Group.1))%>%
+#   glimpse()
+# 
+# x <- (x>0)
+# colSums(x)
 
 
-## and the shannon diversity of each plot based on genus instead of species, 
-gshan <- diversity(BCIg[,2:51], index = "shannon")
+# and the shannon diversity of each plot based on genus instead of species, 
+#gshan <- diversity(BCIg[,2:51], index = "shannon") - wrong
+#gshan <- diversity(BCIg, index = 'shannon') - nope
+
+## Transposing back the other way
+
+x < - data.frame(t(BCIg))
+colnames(x) <- c(unique(gen))
+x
+colSums(x)
+
+## Shannon
+
+gshan <- apply(x, 1 ,shannon)
+gshan
+
 
 ## and frequency of each genus across the 50 plots
+BCIgpa <- (x>0)
+BCIgpa
 
-BCIgpa <- as.matrix(BCIg[,2:51] >0)
-gsum <- rowSums(BCIgpa)
-gfreq <- gsum/50
+plotsum <- colSums(BCIgpa)
+freq <- plotsum/50
+freq
+
 
 ###################################################################################
 ### now what if you wanted to analyse by Family or Order instead??
 ## open the file 'plant classifications.csv' in excel and have a look at what it contains
 
-class.data2<- read.csv('plant classifications.csv')
+class.data2<- read.csv('data/plant classifications.csv')
 class.data2
 head(class.data2)
 table(class.data2$Family)
@@ -159,6 +247,8 @@ table(class.data2$Order)
 ## now we use 'merge' to combine the two dataframes
 class.data3 <- merge(class.data,class.data2, by.x='genus',by.y='Genus')
 class.data3
+
+unique(class.data3$Family)
 
 ## how many species do we have in each family?
 table(class.data3$Family)
@@ -175,7 +265,8 @@ length(class.data3$species)
 ## but only 98 in the new one
 ## can you see why??? because of the join -- fix below
 
-## based on the limited family data available, we can calculate the number of individuals of each family at each site as follows
+## based on the limited family data available, 
+## we can calculate the number of individuals of each family at each site as follows
 BCIt$species <- names(BCI)
 head(BCIt)
 (BCIt.subset <- merge(BCIt,class.data3,by.x='species',by.y='species'))
@@ -185,89 +276,164 @@ famlevel
 
 ## Shannon Diversity by Family Level
 fshan <- apply(famlevel[-1],2,shannon)
+fshan
 
 ## can you calculate the family richness of each site?
-frich <- apply(famlevel[-1], 1, function(x) sum(x>0))
+frich <- apply(famlevel[-1], 2, function(x) sum(x>0))
+frich
 
 ## can you calculate the shannon diversity based on order of each site? 
-########################### clarify with MICHAEL - order for each family high to low site?
+unique(class.data3$Order)
+names(BCIt.subset)
+
+#df with Order instead of species
+BCIo <- aggregate(BCIt.subset[,2:51], list(BCIt.subset$Order), sum)
+BCIo
+
+#per plot with order
+oshan <- apply(BCIo[-1],2,shannon)
+oshan
+
 
 ### now, here is similar data collected the next year
-BCI2 <- read.csv('BCI2.csv')
 
-head(BCI2)
+BCI2 <- read.csv('data/BCI2.csv')%>%
+  glimpse()
 
-### we might want to know if there are extra species, or missing species, or do some error checking
+### we might want to know if there are extra species, 
+### or missing species, or do some error checking
 
 names(BCI2)
 names(BCI)
 
-### so, what are the differences? there has to be an easier way than comparing these big lists??
+### so, what are the differences? 
+### there has to be an easier way than comparing these big lists??
 ### what about?
-namesfromboth <- c(names(BCI2),names(BCI))
-unique(namesfromboth)
-sort(unique(namesfromboth))
+
+# elnom <- c(names(BCI2),names(BCI))
+# unique(elnom)
+# sort(unique(elnom))
 
 ### mmm, still not so easy...
 ### what about?
 cbind(names(BCI2),names(BCI))
-### can you see the problem? can you fix it so the columns are aligned for comparison? give it a try...
+### can you see the problem? can you fix it so the columns are aligned for comparison?
+### give it a try...
 
 cbind(names(BCI2[-1]),names(BCI)) #removing 'plot' from BCI2
+## but creates a list
 
-names(BCI2)[-1]==names(BCI) #BETTER - TRUE/FALSE FOR SAME SAME
+## create a logical list
+#names(BCI2)[-1]==names(BCI) #T/F for same name 
+names(BCI2)==names(BCI)
 
-all(names(BCI2)[-1]==names(BCI)) #T/F IF ALL THE SAME - SOME ARE DIFFERENT
+#all(names(BCI2)[-1]==names(BCI)) #T/F IF ALL THE SAME - SOME ARE DIFFERENT
+all(names(BCI2)==names(BCI))
 
-cbind(names(BCI),names(BCI2)[-1]==names(BCI),names(BCI2)[-1]) #returns two long lists
+#cbind(names(BCI),names(BCI2)[-1]==names(BCI),names(BCI2)[-1]) #returns two long lists
 
-which(!names(BCI2)[-1]==names(BCI)) #means which are different == 43 & 73 
+which(!names(BCI2)==names(BCI)) #means which are different == 43 & 73 
 
-## must be renaming later
+colnames(BCI2)[colnames(BCI2) == "Chrysochlamis.eclipes"] ="Chrysochlamys.eclipes"
+colnames(BCI2)[colnames(BCI2) =="Ficus.costarcana"] = "Ficus.costaricana"
+which(!names(BCI2)==names(BCI))
+
+## adding in 'plot' as row 1 for BCI
+# names(BCI)
+# plot = 1:50
+# BCI = cbind(plot = plot, BCI) 
+# glimpse(BCI)
+
 
 ####YEAR 3
-BCI3 <- read.csv('BCI3.csv')
-head(BCI3)
-names(BCI3)
-### rename column 1 
-names(BCI3)[1] <- 'plot'
-BCI
-### can you also fix the BCI dataset so it has the same structure as the second two ie first column is for plot number??
-names(BCI)
+BCI3 <- read.csv('data/BCI3.csv')%>%
+  select(order(colnames(BCI3)))%>% #listing alphabetically
+  glimpse()
+
+BCI3 <- BCI3 %>%
+  select(-c(X))%>%  #removing X
+  glimpse() 
+  
+# add plot in at first row
+
 plot = 1:50
-BCI = cbind(plot = plot, BCI) #accidentally did it twice
-BCI = BCI[-1]
-BCI = BCI[-227]
-names(BCI)
+BCI3 = cbind(plot = plot, BCI3)
+which(!names(BCI3)==names(BCI))
+cbind(names(BCI3),names(BCI))
 
-### now, check for differences between the data sets like we did before...
-which(!names(BCI2)==names(BCI)) #2 different
-which(!names(BCI3)==names(BCI)) #lots different
-cbind(names(BCI3),names(BCI)) #not listed alphabetically
+colnames(BCI3)[colnames(BCI3) =="Thevetia.aouai"]="Thevetia.ahouai"
+colnames(BCI3)[colnames(BCI3) =="Dripetes.standleyi"]="Drypetes.standleyi"
 
-### identify whether there really are any different species or errors, using the 'sort' function 
-## HELP
-library(dplyr)
-colnames(BCI3)
-sort(colnames(BCI3[2:226]))
+which(!names(BCI3)==names(BCI))
+
 
 ### but now, here is yet another similar dataset collected in the 4th year
-BCI4 <- read.csv('BCI4.csv')
+BCI4 <- read.csv('data/BCI4.csv')%>%
+  glimpse()
 
 ### try to check for errors like you did before... can you see what goes wrong??
+# missing species - not even going to try the above
 
 ### here is a nicer way to check for differences
 
-sapply(names(BCI2), function(spname) spname %in% names(BCI))
-res <- sapply(names(BCI2), function(spname) spname %in% names(BCI))
+sapply(names(BCI4), function(spname) spname %in% names(BCI))
+
+res <- sapply(names(BCI4), function(spname) spname %in% names(BCI))
 which(!res)
+colnames(BCI4)[colnames(BCI4) =="X"]="plot"
+
+res <- sapply(names(BCI4), function(spname) spname %in% names(BCI))
+which(!res)
+
 ### now check which names from BCI are not in BCI2 ???
 
-## as challenges for later, you could try to
-## 1. write a script that automatically checks for and prints differences in species between all combinations of the ten available BCI files
-## this would be especially useful for error checking with a very large number of files
-## 2. write a script that compiles a table of the shannon diversity in each plot over the ten years - and then plots it in some useful way
+sp4 <- colnames(BCI4)
 
+# Get the column names of df2
+sp1 <- colnames(BCI)
+
+# Find the column names present in df1 but missing in df2
+missing <- setdiff(sp1, sp4)
+missing
+
+Alibertia.edulis <- rep(seq(0, 0), len=50)
+Colubrina.glandulosa <- rep(seq(0, 0), len=50)
+Ficus.colubrinae<- rep(seq(0, 0), len=50)
+Trichospermum.galeottii<- rep(seq(0, 0), len=50)
+
+BCI4 <- cbind(Alibertia.edulis = Alibertia.edulis, BCI4)
+BCI4 <- cbind(Colubrina.glandulosa = Colubrina.glandulosa, BCI4)
+BCI4 <- cbind(Ficus.colubrinae = Ficus.colubrinae, BCI4)
+BCI4 <- cbind(Trichospermum.galeottii = Trichospermum.galeottii, BCI4)
+
+which(!names(BCI4)==names(BCI))
+
+
+BCI4 <- BCI4 %>%
+  dplyr::select(-c(plot))%>% 
+  glimpse()
+
+BCI4 <- BCI4 %>%
+  dplyr::select(order(colnames(BCI4)))%>%
+  dplyr::mutate(plot = plot)%>%
+  select(plot, everything())%>%
+  glimpse()
+  
+  
+which(!names(BCI4)==names(BCI))
+cbind(names(BCI4),names(BCI))
+
+## as challenges for later, you could try to
+## 1. write a script that automatically checks for and prints differences
+## in species between all combinations of the ten available BCI files
+## this would be especially useful for error checking with a very large number of files
+
+
+## 2. write a script that compiles a table of the shannon diversity in each plot
+## over the ten years - and then plots it in some useful way
+
+rbind?
+  
 
 
 ####################################################################################
@@ -293,38 +459,8 @@ Kingdom<- Order<-Family<-Subfamily<-Genus<-NA
 Eudicot<-Angiosperm<-Rosid<-Asterid <- FALSE
 
 ## loop through the data word by word, setting trackers as they are encountered
-for (i in 1:length(therawdata )){
-	print(paste(i,therawdata[i]))
-	if (therawdata[i]=="Angiosperms") Angiosperm<-TRUE 
-	if (therawdata[i]=="Plantae") Kingdom<-"Plantae"
-	if (therawdata[i]=="Eudicots") Eudicot<-TRUE
-	if (therawdata[i]=="Asterids") Asterid<-TRUE
-	if (therawdata[i]=="Rosids") Rosid<-TRUE
-	if (therawdata[i]=="Order:") Order<- therawdata[i+1]
-	if (therawdata[i]=="Family:") Family<- therawdata[i+1]
-	if (therawdata[i]=="Subfamily:") Subfamily<- therawdata[i+1]
-	### when the keyword 'Genus:' is encountered, create a new line to add to the processed data file, with all tracked values
-	### and then reset all the trackers
-	if (therawdata[i]=="Genus:") {
-		Genus<- therawdata[i+1]
-		newprocesseddata <- c(Kingdom,Angiosperm,Eudicot,Asterid,Rosid,Order,Family,Subfamily,Genus)
-		theprocesseddata <- rbind(theprocesseddata ,newprocesseddata )
-		Kingdom<- Order<-Family<-Subfamily<-Genus<-NA
-		Eudicot<-Angiosperm<-Rosid<-Asterid <- FALSE
-	}
-}
-## what have we got?
-theprocesseddata
-## make it into a data frame
-theprocesseddata <- data.frame(theprocesseddata)
-## add the names
-names(theprocesseddata) <- c('Kingdom','Angiosperm','Eudicot','Asterid','Rosid','Order','Family','Subfamily','Genus')
-## what have we got?
-theprocesseddata
-## reverse the column order
-theprocesseddata <- theprocesseddata[,9:1]
-## what have we got?
-theprocesseddata
+
+
 ## now in a good standard format, so save it to a csv file for later use
 write.csv(theprocesseddata,'plant classifications.csv',row.names=FALSE)
 

@@ -672,7 +672,8 @@ for (time in 2:maxtime){
   foodneeded2 = pop2[time-1] * 0.01 
   foodeaten = food[time-1] * pop1[time-1] * 0.001
   foodeaten2 = food[time-1] * pop2[time-1] * 0.001
-  food[time] = food[time-1] - (foodeaten + foodeaten2) + (1+sin(time/365*pi*2)) #added variation here
+  #food[time] = food[time-1] - (foodeaten + foodeaten2) + (1+sin(time/365*pi*2)) #added variation here
+  food[time] = food[time-1] - foodeaten - foodeaten2 + (1+sin(time/365*pi*2)) #same as above
   growthrate1 = 0.05 * (foodeaten - foodneeded) 
   growthrate2 = 0.05 * (foodeaten2 - foodneeded2)
   pop1[time] = pop1[time-1] + growthrate1 * pop1[time-1]
