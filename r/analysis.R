@@ -9,6 +9,9 @@ library(foreign)
 library(ggplot2)
 library(ggpubr)
 
+#gittest
+2+2
+
 #read in data & creating RDS
 # grid <- read.csv('simulations/grid_l20.csv')
 # redgrid <-read.csv('simulations/redgrid_l20.csv')
